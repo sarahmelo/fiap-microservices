@@ -1,0 +1,44 @@
+# --- Build ------------------------------------------------
+/target/
+/build/
+/out/
+/*.class
+*.jar
+*.war
+
+# --- Maven & Gradle --------------------------------------
+.mvn/wrapper/maven-wrapper.jar !    # mantém o wrapper
+.mvn/wrapper/maven-wrapper.properties !
+.mvn/wrapper/MavenWrapperDownloader.java !
+.mvn/**     # se não quiser versionar, remova os ! acima
+.gradle/
+
+# --- IDEs -------------------------------------------------
+.idea/
+*.iml
+.vscode/
+
+# --- Relatórios ------------------------------------------
+/jacoco/
+/coverage/
+/reports/
+
+# --- Logs & Temp -----------------------------------------
+*.log
+*.tmp
+*.pid
+hs_err_pid*
+
+# --- Sistema Operacional ---------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Docker / Containers ---------------------------------
+docker-data/
+*.tar
+
+# --- Segurança -------------------------------------------
+*.keystore
+src/main/resources/**/application-*.yml
+src/main/resources/**/application-*.properties

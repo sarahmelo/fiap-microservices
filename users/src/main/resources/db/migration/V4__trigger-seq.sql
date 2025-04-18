@@ -1,0 +1,7 @@
+CREATE OR REPLACE TRIGGER trg_user_id
+BEFORE INSERT ON tbl_user
+FOR EACH ROW
+BEGIN
+    :new.ID := seq_user_id.NEXTVAL;
+END;
+/
