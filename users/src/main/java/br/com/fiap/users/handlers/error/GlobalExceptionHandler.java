@@ -1,6 +1,5 @@
-package br.com.fiap.users.exception;
+package br.com.fiap.users.handlers.error;
 
-import br.com.fiap.users.handlers.error.UserNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

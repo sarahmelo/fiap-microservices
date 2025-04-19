@@ -1,7 +1,5 @@
-package br.com.fiap.aspersor.exception;
+package br.com.fiap.aspersor.handlers.error;
 
-import br.com.fiap.aspersor.handlers.error.SprinklerNotFoundException;
-import br.com.fiap.aspersor.handlers.error.UserNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
