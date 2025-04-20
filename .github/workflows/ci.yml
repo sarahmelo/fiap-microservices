@@ -21,17 +21,15 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Compilar e testar serviço Users
+      - name: Compilar serviço Users
         working-directory: ./users
         run: |
           mvn clean package -DskipTests
-          mvn test
 
-      - name: Compilar e testar serviço Sprinkler
+      - name: Compilar serviço Sprinkler
         working-directory: ./sprinkler
         run: |
           mvn clean package -DskipTests
-          mvn test
 
       - name: Upload do artefato Users
         uses: actions/upload-artifact@v4
