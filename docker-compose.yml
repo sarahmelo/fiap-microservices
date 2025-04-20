@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Microserviço Users
+  users:
+    build:
+      context: ./users
+      dockerfile: Dockerfile
+    container_name: fiap-users
+    environment:
+      # Usando MySQL local
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/fiap
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ipmsup142
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # Definindo dialeto explicitamente
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      # Especificando driver explicitamente
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    networks:
+      - fiap-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Microserviço Sprinkler
+  sprinkler:
+    build:
+      context: ./sprinkler
+      dockerfile: Dockerfile
+    container_name: fiap-sprinkler
+    environment:
+      # Usando MySQL local
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/fiap
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ipmsup142
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # Definindo dialeto explicitamente
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      # Especificando driver explicitamente
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    networks:
+      - fiap-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+# Definição de rede
+networks:
+  fiap-network:
+    driver: bridge
