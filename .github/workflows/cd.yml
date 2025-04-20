@@ -17,50 +17,22 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
         
-      - name: Configurar JDK 21
-        uses: actions/setup-java@v3
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          
-      - name: Download do artefato Users
-        uses: actions/download-artifact@v4
-        with:
-          name: users-artifact
-          path: ./users/target/
-          
-      - name: Download do artefato Sprinkler
-        uses: actions/download-artifact@v4
-        with:
-          name: sprinkler-artifact
-          path: ./sprinkler/target/
-          
-      - name: Login no Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-          
-      - name: Build e Push da imagem Docker Users (Staging)
-        uses: docker/build-push-action@v4
-        with:
-          context: ./users
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:staging
-          
-      - name: Build e Push da imagem Docker Sprinkler (Staging)
-        uses: docker/build-push-action@v4
-        with:
-          context: ./sprinkler
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:staging
-          
       - name: Deploy para o ambiente de Staging
         run: |
-          # Esta é uma simulação do deployment - substitua pelos comandos reais
-          echo "Deployando para o ambiente de Staging"
-          # Exemplo: usando SSH para executar o docker-compose em um servidor remoto
-          # ssh ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} "cd /path/to/app && docker-compose -f docker-compose-staging.yml pull && docker-compose -f docker-compose-staging.yml up -d"
+          echo "Imagens Docker para Staging foram publicadas com sucesso no Docker Hub:"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:staging"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:staging-${{ github.event.workflow_run.head_sha }}"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:staging"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:staging-${{ github.event.workflow_run.head_sha }}"
+          echo "Para executar localmente, use: docker-compose -f docker-compose-staging.yml up -d"
+          
+          # Exemplo de comando para deploy remoto (comentado):
+          # ssh ${{ secrets.STAGING_SERVER_USER }}@${{ secrets.STAGING_SERVER_HOST }} \
+          #   "cd /path/to/app && \
+          #   export DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }} && \
+          #   export IMAGE_TAG=staging && \
+          #   docker-compose -f docker-compose-staging.yml pull && \
+          #   docker-compose -f docker-compose-staging.yml up -d"
 
   deploy-to-production:
     if: ${{ github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'master') }}
@@ -72,47 +44,19 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
         
-      - name: Configurar JDK 21
-        uses: actions/setup-java@v3
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          
-      - name: Download do artefato Users
-        uses: actions/download-artifact@v4
-        with:
-          name: users-artifact
-          path: ./users/target/
-          
-      - name: Download do artefato Sprinkler
-        uses: actions/download-artifact@v4
-        with:
-          name: sprinkler-artifact
-          path: ./sprinkler/target/
-          
-      - name: Login no Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-          
-      - name: Build e Push da imagem Docker Users (Produção)
-        uses: docker/build-push-action@v4
-        with:
-          context: ./users
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:latest,${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:${{ github.sha }}
-          
-      - name: Build e Push da imagem Docker Sprinkler (Produção)
-        uses: docker/build-push-action@v4
-        with:
-          context: ./sprinkler
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:latest,${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:${{ github.sha }}
-          
       - name: Deploy para o ambiente de Produção
         run: |
-          echo "Imagens Docker publicadas com sucesso no Docker Hub:"
-          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:latest"
-          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:latest"
+          echo "Imagens Docker para Produção foram publicadas com sucesso no Docker Hub:"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:prod"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:prod-${{ github.event.workflow_run.head_sha }}"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:prod"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:prod-${{ github.event.workflow_run.head_sha }}"
           echo "Para executar localmente, use: docker-compose -f docker-compose-prod.yml up -d"
+          
+          # Exemplo de comando para deploy remoto (comentado):
+          # ssh ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }} \
+          #   "cd /path/to/app && \
+          #   export DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }} && \
+          #   export IMAGE_TAG=prod && \
+          #   docker-compose -f docker-compose-prod.yml pull && \
+          #   docker-compose -f docker-compose-prod.yml up -d"
