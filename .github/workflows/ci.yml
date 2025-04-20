@@ -34,14 +34,14 @@ jobs:
           mvn test
 
       - name: Upload do artefato Users
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: users-artifact
           path: ./users/target/*.jar
           retention-days: 5
 
       - name: Upload do artefato Sprinkler
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: sprinkler-artifact
           path: ./sprinkler/target/*.jar

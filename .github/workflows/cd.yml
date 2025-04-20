@@ -24,13 +24,13 @@ jobs:
           distribution: 'temurin'
           
       - name: Download do artefato Users
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: users-artifact
           path: ./users/target/
           
       - name: Download do artefato Sprinkler
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: sprinkler-artifact
           path: ./sprinkler/target/
@@ -79,13 +79,13 @@ jobs:
           distribution: 'temurin'
           
       - name: Download do artefato Users
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: users-artifact
           path: ./users/target/
           
       - name: Download do artefato Sprinkler
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: sprinkler-artifact
           path: ./sprinkler/target/
