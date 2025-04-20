@@ -23,17 +23,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           
-      - name: Download do artefato Users
-        uses: actions/download-artifact@v1
-        with:
-          name: users-artifact
-          path: ./users/target/
+      - name: Compilar serviço Users
+        working-directory: ./users
+        run: mvn clean package -DskipTests
           
-      - name: Download do artefato Sprinkler
-        uses: actions/download-artifact@v1
-        with:
-          name: sprinkler-artifact
-          path: ./sprinkler/target/
+      - name: Compilar serviço Sprinkler
+        working-directory: ./sprinkler
+        run: mvn clean package -DskipTests
           
       - name: Login no Docker Hub
         uses: docker/login-action@v2
@@ -78,17 +74,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           
-      - name: Download do artefato Users
-        uses: actions/download-artifact@v1
-        with:
-          name: users-artifact
-          path: ./users/target/
+      - name: Compilar serviço Users
+        working-directory: ./users
+        run: mvn clean package -DskipTests
           
-      - name: Download do artefato Sprinkler
-        uses: actions/download-artifact@v1
-        with:
-          name: sprinkler-artifact
-          path: ./sprinkler/target/
+      - name: Compilar serviço Sprinkler
+        working-directory: ./sprinkler
+        run: mvn clean package -DskipTests
           
       - name: Login no Docker Hub
         uses: docker/login-action@v2
