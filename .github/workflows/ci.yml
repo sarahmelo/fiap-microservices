@@ -34,13 +34,13 @@ jobs:
           mvn test
 
       - name: Upload do artefato Users
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-pages-artifact@v2
         with:
           name: users-artifact
           path: ./users/target/*.jar
 
       - name: Upload do artefato Sprinkler
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-pages-artifact@v2
         with:
           name: sprinkler-artifact
           path: ./sprinkler/target/*.jar
