@@ -1,0 +1,73 @@
+services:
+  # Banco de dados MySQL para Produção
+  mysql-prod:
+    image: mysql:8.0
+    container_name: mysql-prod
+    environment:
+      MYSQL_ROOT_PASSWORD: ipmsup142
+      MYSQL_DATABASE: fiap_prod
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-prod-data:/var/lib/mysql
+    networks:
+      - fiap-network-prod
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pipmsup142"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Microserviço Users
+  users:
+    build:
+      context: ./users
+      dockerfile: Dockerfile
+    container_name: fiap-users-prod
+    environment:
+      # Usando perfil de produção
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-prod:3306/fiap_prod
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ipmsup142
+      JWT_SECRET: minha-chave-secreta-de-producao-muito-longa-e-segura
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-prod:
+        condition: service_healthy
+    networks:
+      - fiap-network-prod
+
+  # Microserviço Sprinkler
+  sprinkler:
+    build:
+      context: ./sprinkler
+      dockerfile: Dockerfile
+    container_name: fiap-sprinkler-prod
+    environment:
+      # Usando perfil de produção
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-prod:3306/fiap_prod
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ipmsup142
+      JWT_SECRET: minha-chave-secreta-de-producao-muito-longa-e-segura
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql-prod:
+        condition: service_healthy
+      users:
+        condition: service_started
+    networks:
+      - fiap-network-prod
+
+networks:
+  fiap-network-prod:
+    driver: bridge
+
+volumes:
+  mysql-prod-data:

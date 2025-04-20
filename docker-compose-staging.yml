@@ -1,0 +1,73 @@
+services:
+  # Banco de dados MySQL para Staging
+  mysql-staging:
+    image: mysql:8.0
+    container_name: mysql-staging
+    environment:
+      MYSQL_ROOT_PASSWORD: ipmsup142
+      MYSQL_DATABASE: fiap_staging
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql-staging-data:/var/lib/mysql
+    networks:
+      - fiap-network-staging
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pipmsup142"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Microserviço Users
+  users:
+    build:
+      context: ./users
+      dockerfile: Dockerfile
+    container_name: fiap-users-staging
+    environment:
+      # Usando perfil de staging
+      SPRING_PROFILES_ACTIVE: staging
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-staging:3306/fiap_staging
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ipmsup142
+      JWT_SECRET: chave-secreta-para-ambiente-de-staging
+      SERVER_PORT: 8080
+    ports:
+      - "8090:8080"
+    depends_on:
+      mysql-staging:
+        condition: service_healthy
+    networks:
+      - fiap-network-staging
+
+  # Microserviço Sprinkler
+  sprinkler:
+    build:
+      context: ./sprinkler
+      dockerfile: Dockerfile
+    container_name: fiap-sprinkler-staging
+    environment:
+      # Usando perfil de staging
+      SPRING_PROFILES_ACTIVE: staging
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-staging:3306/fiap_staging
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ipmsup142
+      JWT_SECRET: chave-secreta-para-ambiente-de-staging
+      SERVER_PORT: 8081
+    ports:
+      - "8091:8081"
+    depends_on:
+      mysql-staging:
+        condition: service_healthy
+      users:
+        condition: service_started
+    networks:
+      - fiap-network-staging
+
+networks:
+  fiap-network-staging:
+    driver: bridge
+
+volumes:
+  mysql-staging-data:
