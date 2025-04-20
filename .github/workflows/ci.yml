@@ -1,0 +1,48 @@
+name: CI - Compilação e Testes
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compilar e testar serviço Users
+        working-directory: ./users
+        run: |
+          mvn clean package -DskipTests
+          mvn test
+
+      - name: Compilar e testar serviço Sprinkler
+        working-directory: ./sprinkler
+        run: |
+          mvn clean package -DskipTests
+          mvn test
+
+      - name: Upload do artefato Users
+        uses: actions/upload-artifact@v3
+        with:
+          name: users-artifact
+          path: ./users/target/*.jar
+          retention-days: 5
+
+      - name: Upload do artefato Sprinkler
+        uses: actions/upload-artifact@v3
+        with:
+          name: sprinkler-artifact
+          path: ./sprinkler/target/*.jar
+          retention-days: 5
