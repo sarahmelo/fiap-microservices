@@ -59,7 +59,7 @@ jobs:
           
           if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
             echo "ENV=prod" >> $GITHUB_ENV
-          elif [[ "$BRANCH_NAME" == "develop" ]]; then
+          elif [[ "$BRANCH_NAME" == "develop" || "$BRANCH_NAME" == "developer" ]]; then
             echo "ENV=staging" >> $GITHUB_ENV
           else
             echo "ENV=dev" >> $GITHUB_ENV
