@@ -27,12 +27,12 @@ jobs:
       # Executar todos os testes BDD no microsserviço Users
       - name: Executar testes BDD - Users
         working-directory: ./users
-        run: ./mvnw test -Dtest=**/bdd/CucumberRunnerTest
+        run: ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest
 
       # Executar todos os testes BDD no microsserviço Sprinkler
       - name: Executar testes BDD - Sprinkler
         working-directory: ./sprinkler
-        run: ./mvnw test -Dtest=**/bdd/CucumberRunnerTest
+        run: ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest
 
       # Publicar relatórios como artefatos
       - name: Publicar relatórios
