@@ -5,6 +5,7 @@ br/com/fiap/aspersor/handlers/error/UserNotFoundException.class
 br/com/fiap/aspersor/SprinklerApplication.class
 br/com/fiap/aspersor/dto/SprinklerDTO.class
 br/com/fiap/aspersor/model/User.class
+br/com/fiap/aspersor/exception/ResourceNotFoundException.class
 br/com/fiap/aspersor/infra/security/SecurityConfigurations.class
 br/com/fiap/aspersor/model/Sprinkler.class
 br/com/fiap/aspersor/dto/AuthenticationDTO.class

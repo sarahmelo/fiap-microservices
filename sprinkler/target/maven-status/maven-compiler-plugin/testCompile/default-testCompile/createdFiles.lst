@@ -1,1 +1,4 @@
 br/com/fiap/aspersor/SprinklerApplicationTests.class
+br/com/fiap/aspersor/bdd/CucumberSpringConfiguration.class
+br/com/fiap/aspersor/bdd/CucumberRunnerTest.class
+br/com/fiap/aspersor/bdd/steps/AspersorSteps.class

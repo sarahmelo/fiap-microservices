@@ -29,7 +29,7 @@ jobs:
         working-directory: ./users
         run: |
           echo "Executando testes BDD no módulo Users..."
-          ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast
+          ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast -Dcucumber.features=src/test/resources/features -Dcucumber.glue=br.com.fiap.users.bdd.steps,br.com.fiap.users.bdd.config
         # O comando acima irá falhar imediatamente se encontrar qualquer erro de teste
 
       # Executar todos os testes BDD no microsserviço Sprinkler apenas se o Users passar
@@ -37,7 +37,7 @@ jobs:
         working-directory: ./sprinkler
         run: |
           echo "Executando testes BDD no módulo Sprinkler..."
-          ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast
+          ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast -Dcucumber.features=src/test/resources/features -Dcucumber.glue=br.com.fiap.aspersor.bdd.steps,br.com.fiap.aspersor.bdd
 
       # Publicar relatórios como artefatos (apenas se chegar nesta etapa)
       - name: Publicar relatórios
