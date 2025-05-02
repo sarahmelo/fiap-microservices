@@ -24,15 +24,15 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Executar todos os testes no microsserviço Users
-      - name: Executar testes - Users
+      # Executar todos os testes BDD no microsserviço Users
+      - name: Executar testes BDD - Users
         working-directory: ./users
-        run: ./mvnw test
+        run: ./mvnw test -Dtest=**/bdd/CucumberRunnerTest
 
-      # Executar todos os testes no microsserviço Sprinkler
-      - name: Executar testes - Sprinkler
+      # Executar todos os testes BDD no microsserviço Sprinkler
+      - name: Executar testes BDD - Sprinkler
         working-directory: ./sprinkler
-        run: ./mvnw test
+        run: ./mvnw test -Dtest=**/bdd/CucumberRunnerTest
 
       # Publicar relatórios como artefatos
       - name: Publicar relatórios
