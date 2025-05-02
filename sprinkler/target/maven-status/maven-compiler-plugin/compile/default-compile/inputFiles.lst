@@ -4,6 +4,7 @@
 /Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/main/java/br/com/fiap/aspersor/dto/RegistrationSprinklerDTO.java
 /Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/main/java/br/com/fiap/aspersor/dto/SprinklerDTO.java
 /Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/main/java/br/com/fiap/aspersor/dto/UpdateSprinklerDTO.java
+/Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/main/java/br/com/fiap/aspersor/exception/ResourceNotFoundException.java
 /Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/main/java/br/com/fiap/aspersor/handlers/error/GlobalExceptionHandler.java
 /Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/main/java/br/com/fiap/aspersor/handlers/error/SprinklerNotFoundException.java
 /Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/main/java/br/com/fiap/aspersor/handlers/error/UserNotFoundException.java
