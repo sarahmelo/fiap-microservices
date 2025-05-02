@@ -8,7 +8,7 @@ import io.cucumber.junit.CucumberOptions;
 @CucumberOptions(
     features = "src/test/resources/features",
     glue = {"br.com.fiap.users.bdd.steps", "br.com.fiap.users.bdd.config"},
-    plugin = {"pretty", "html:target/cucumber-reports"}
+    plugin = {"pretty", "html:target/cucumber-reports", "json:target/cucumber-reports/cucumber.json"}
 )
 public class CucumberRunnerTest {
 }
