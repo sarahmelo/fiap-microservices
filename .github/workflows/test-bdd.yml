@@ -1,4 +1,4 @@
-name: Testes BDD Simples
+name: Testes BDD - Pipeline de Validação
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
   testes:
     name: Executar Testes BDD
     runs-on: ubuntu-latest
-
+    # Configuração para interromper o workflow se um passo falhar
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -24,19 +24,24 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Executar todos os testes BDD no microsserviço Users
+      # Executar todos os testes BDD no microsserviço Users com falha rápida
       - name: Executar testes BDD - Users
         working-directory: ./users
-        run: ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest
+        run: |
+          echo "Executando testes BDD no módulo Users..."
+          ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast
+        # O comando acima irá falhar imediatamente se encontrar qualquer erro de teste
 
-      # Executar todos os testes BDD no microsserviço Sprinkler
+      # Executar todos os testes BDD no microsserviço Sprinkler apenas se o Users passar
       - name: Executar testes BDD - Sprinkler
         working-directory: ./sprinkler
-        run: ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest
+        run: |
+          echo "Executando testes BDD no módulo Sprinkler..."
+          ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast
 
-      # Publicar relatórios como artefatos
+      # Publicar relatórios como artefatos (apenas se chegar nesta etapa)
       - name: Publicar relatórios
-        if: always()
+        if: success() # Esta etapa só será executada se TODAS as anteriores forem bem-sucedidas
         uses: actions/upload-artifact@v4
         with:
           name: relatorios-testes
@@ -44,3 +49,11 @@ jobs:
             **/target/cucumber-reports
             **/target/surefire-reports
           retention-days: 7
+          
+      # Notificação de falha caso os testes não passem
+      - name: Notificar falha
+        if: failure()
+        run: |
+          echo "‼️ TESTES FALHARAM! A pipeline foi interrompida. ‼️"
+          echo "Verifique os logs para identificar os problemas."
+          exit 1

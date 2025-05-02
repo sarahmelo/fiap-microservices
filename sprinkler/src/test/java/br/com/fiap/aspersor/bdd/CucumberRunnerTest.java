@@ -8,8 +8,8 @@ import org.junit.runner.RunWith;
 @RunWith(Cucumber.class)
 @CucumberOptions(
     features = "src/test/resources/features",
-    glue = {"br.com.fiap.aspersor.bdd.steps", "br.com.fiap.aspersor.bdd.config"},
-    plugin = {"pretty", "html:target/cucumber-reports", "json:target/cucumber-reports/cucumber.json"}
+    glue = {"br.com.fiap.aspersor.bdd.steps", "br.com.fiap.aspersor.bdd"},
+    plugin = {"pretty", "html:target/cucumber-reports/html", "json:target/cucumber-reports/json/cucumber.json"}
 )
 public class CucumberRunnerTest {
 }
