@@ -1,1 +1,3 @@
-/Users/ipmedia/Documents/projects/fiap_projects/microservices/sprinkler/src/test/java/br/com/fiap/aspersor/SprinklerApplicationTests.java
+/Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/test/java/br/com/fiap/aspersor/SprinklerApplicationTests.java
+/Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/test/java/br/com/fiap/aspersor/bdd/CucumberRunnerTest.java
+/Users/ipmedia/Documents/projects/fiap/fiap-microservices/sprinkler/src/test/java/br/com/fiap/aspersor/bdd/steps/AspersorSteps.java
