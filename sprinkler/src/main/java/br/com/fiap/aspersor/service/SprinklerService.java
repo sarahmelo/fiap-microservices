@@ -3,6 +3,7 @@ package br.com.fiap.aspersor.service;
 import br.com.fiap.aspersor.dto.RegistrationSprinklerDTO;
 import br.com.fiap.aspersor.dto.SprinklerDTO;
 import br.com.fiap.aspersor.dto.UpdateSprinklerDTO;
+import br.com.fiap.aspersor.exception.ResourceNotFoundException;
 import br.com.fiap.aspersor.model.Sprinkler;
 import br.com.fiap.aspersor.model.User;
 import br.com.fiap.aspersor.repository.SprinklerRepository;
@@ -47,7 +48,7 @@ public class SprinklerService {
         if (sprinkler.isPresent()) {
             return new SprinklerDTO(sprinkler.get());
         } else {
-            throw new RuntimeException("Sprinkler not found.");
+            throw new ResourceNotFoundException("Aspersor com ID " + id + " não encontrado");
         }
     }
 
@@ -61,7 +62,7 @@ public class SprinklerService {
         if (sprinkler.isPresent()) {
             repository.delete(sprinkler.get());
         } else {
-            throw new RuntimeException("Sprinkler not found");
+            throw new ResourceNotFoundException("Aspersor com ID " + id + " não encontrado");
         }
     }
 

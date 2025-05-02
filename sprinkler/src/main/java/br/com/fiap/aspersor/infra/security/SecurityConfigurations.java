@@ -25,8 +25,10 @@ public class SecurityConfigurations {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/api/sprinkler").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/sprinkler/**").permitAll() // Permitir GET em endpoints específicos
                         .requestMatchers(HttpMethod.PUT, "/api/sprinkler").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/sprinkler").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/sprinkler/**").permitAll() // Permitir DELETE para testes
                         .anyRequest().authenticated()
                 )
                 .build();
