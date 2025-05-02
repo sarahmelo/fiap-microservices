@@ -8,16 +8,15 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import br.com.fiap.users.bdd.dao.TestUserDAO;
+import br.com.fiap.users.bdd.dto.AuthRequestDTO;
+import br.com.fiap.users.bdd.dto.AuthResponseDTO;
+import br.com.fiap.users.bdd.dto.UserRequestDTO;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 public class AutenticacaoSteps {
 
@@ -32,9 +31,7 @@ public class AutenticacaoSteps {
     private String senha;
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
-    
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private TestUserDAO userDAO;
     
     @Dado("que eu tenho um usuário cadastrado com email {string} e senha {string}")
     public void usuarioCadastrado(String email, String senha) {
@@ -43,51 +40,33 @@ public class AutenticacaoSteps {
         this.email = email;
         this.senha = senha;
 
-        try {
-            // Verificar se o usuário já existe
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(
-                "SELECT * FROM tbl_user WHERE email = ?", email);
-            
-            if (users.isEmpty()) {
-                // Inserir usuário diretamente no banco
-                jdbcTemplate.update(
-                    "INSERT INTO tbl_user (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)",
-                    1L, email, "Usuário Teste", passwordEncoder.encode(senha), "USER"
-                );
-                
+        if (userDAO.userExistsByEmail(email)) {
+            System.out.println("Usuário já existe: " + email);
+        } else {
+            // Criar usuário para teste
+            boolean created = userDAO.createTestUser(1L, "Usuário Teste", email, senha);
+            if (created) {
                 System.out.println("Usuário de teste criado: " + email);
             } else {
-                System.out.println("Usuário já existe: " + email);
+                System.err.println("Erro ao criar usuário de teste: " + email);
             }
-        } catch (Exception e) {
-            System.err.println("Erro ao criar usuário de teste: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
     @Dado("que eu tenho um usuário administrador")
     public void criarUsuarioAdmin() {
-        // Cria um usuário admin através de inserção direta no banco
-        try {
-            // Certifique-se de que um usuário com o mesmo email não existe
-            jdbcTemplate.update("DELETE FROM tbl_user WHERE email = ?", "admin@teste.com");
-            
-            // Consulta o maior ID atual para evitar conflitos
-            Long nextId = 999L;  // ID grande e seguro como fallback
-            try {
-                Integer maxId = jdbcTemplate.queryForObject("SELECT COALESCE(MAX(id), 0) FROM tbl_user", Integer.class);
-                nextId = Long.valueOf(maxId + 1);
-            } catch (Exception ex) {
-                System.out.println("Não foi possível obter o maior ID: " + ex.getMessage());
-            }
-            
-            // Insere um novo usuário admin
-            String sql = "INSERT INTO tbl_user (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)";
-            jdbcTemplate.update(sql, nextId, "Admin Teste", "admin@teste.com", 
-                               "$2a$10$UGmoBsdK/pEBsVFHau17X.TVlvr2te/La2W8WHO3W.szTgDHmu6c2", "ADMIN");
+        // Criar um admin através do DAO
+        String adminEmail = "admin@teste.com";
+        String adminPassword = "admin123";
+        
+        // Obter o próximo ID disponível
+        Long nextId = userDAO.getNextAvailableId();
+        
+        boolean created = userDAO.createAdminUser(nextId, "Admin Teste", adminEmail, adminPassword);
+        if (created) {
             System.out.println("Admin criado para testes");
-        } catch (Exception e) {
-            System.out.println("Erro ao criar admin: " + e.getMessage());
+        } else {
+            System.out.println("Erro ao criar admin para testes");
         }
     }
 
@@ -98,52 +77,43 @@ public class AutenticacaoSteps {
         this.email = email;
         this.senha = "senha123";
 
-        try {
-            // Verificar se o usuário existe e remover se necessário
-            List<Map<String, Object>> users = jdbcTemplate.queryForList(
-                "SELECT * FROM tbl_user WHERE email = ?", email);
-            
-            if (!users.isEmpty()) {
-                // Remover o usuário se existir
-                jdbcTemplate.update("DELETE FROM tbl_user WHERE email = ?", email);
-                System.out.println("Usuário removido: " + email);
-            } else {
-                System.out.println("Usuário já não existe: " + email);
-            }
-            
-            // Inserir o admin para ter autenticação nos testes
-            List<Map<String, Object>> adminUsers = jdbcTemplate.queryForList(
-                "SELECT * FROM tbl_user WHERE email = ?", "admin@teste.com");
-                
-            if (adminUsers.isEmpty()) {
-                jdbcTemplate.update(
-                    "INSERT INTO tbl_user (id, email, name, password, role) VALUES (?, ?, ?, ?, ?)",
-                    999L, "admin@teste.com", "Admin Teste", passwordEncoder.encode("admin123"), "ADMIN"
-                );
-                System.out.println("Admin criado para testes");
-            }
-        } catch (Exception e) {
-            System.err.println("Erro ao verificar usuário: " + e.getMessage());
-            e.printStackTrace();
+        // Remover usuário se existir
+        boolean removed = userDAO.deleteUserByEmail(email);
+        if (removed) {
+            System.out.println("Usuário removido: " + email);
+        } else {
+            System.out.println("Usuário já não existe: " + email);
         }
+        
+        // Garantir que existe um admin para autenticação nos testes
+        userDAO.ensureAdminExists("admin@teste.com", "admin123");
+        System.out.println("Admin disponível para testes");
     }
 
     @Quando("eu faço uma requisição POST para {string} com as credenciais corretas")
     public void requisicaoLoginCorreta(String endpoint) {
+        // Criar DTO de autenticação com as credenciais
+        AuthRequestDTO authRequest = AuthRequestDTO.login(email, senha);
+        
         request = given()
             .contentType("application/json")
-            .body("{ \"email\": \"" + email + "\", \"password\": \"" + senha + "\" }");
+            .body(authRequest.toJson());
 
         response = request.when().post(endpoint);
+        System.out.println("Login com: " + authRequest.toJson());
     }
 
     @Quando("eu faço uma requisição POST para {string} com a senha incorreta")
     public void requisicaoLoginIncorreta(String endpoint) {
+        // Criar DTO de autenticação com senha incorreta
+        AuthRequestDTO authRequest = new AuthRequestDTO(email, "senhaerrada");
+        
         request = given()
             .contentType("application/json")
-            .body("{ \"email\": \"" + email + "\", \"password\": \"senhaerrada\" }");
+            .body(authRequest.toJson());
 
         response = request.when().post(endpoint);
+        System.out.println("Login incorreto com: " + authRequest.toJson());
         
         // Ajustando a expectativa do teste para status 500, já que o controller não está tratando
         // adequadamente as credenciais inválidas e lançando 401
@@ -157,12 +127,15 @@ public class AutenticacaoSteps {
 
     @Quando("eu faço uma requisição POST para {string} com dados válidos")
     public void requisicaoRegistro(String endpoint) {
-        // Adicionando o campo 'role' que estava faltando, conforme mensagem de erro
+        // Criar DTO de usuário com dados válidos
+        UserRequestDTO userRequest = new UserRequestDTO("Novo Usuário", email, senha, "USER");
+        
         request = given()
             .contentType("application/json")
-            .body("{ \"email\": \"" + email + "\", \"password\": \"" + senha + "\", \"name\": \"Novo Usuário\", \"role\": \"USER\" }");
+            .body(userRequest.toJson());
 
         response = request.when().post(endpoint);
+        System.out.println("Registro com: " + userRequest.toJson());
         
         // Ajustando a expectativa do teste temporariamente
         if (response.getStatusCode() == 400 && 
@@ -174,25 +147,21 @@ public class AutenticacaoSteps {
 
     @Quando("eu faço uma requisição POST para \"/auth/register\" com dados válidos")
     public void registrarUsuario() {
-        // Verificar e remover usuário se já existir (para evitar conflito)
-        try {
-            jdbcTemplate.update("DELETE FROM tbl_user WHERE email = ?", "novo@teste.com");
-            System.out.println("Limpeza prévia: possível usuário existente removido");
-        } catch (Exception e) {
-            System.out.println("Nenhum usuário encontrado para remoção ou erro: " + e.getMessage());
-        }
+        // Remover usuário se já existir (para evitar conflito)
+        userDAO.deleteUserByEmail("novo@teste.com");
+        System.out.println("Limpeza prévia: possível usuário existente removido");
         
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("name", "Novo Usuário");
-        requestBody.put("email", "novo@teste.com");
-        requestBody.put("password", "senha123");
-        requestBody.put("role", "USER"); // Adicionando o campo role que estava faltando
+        // Criar um DTO de usuário para o registro
+        UserRequestDTO userRequest = UserRequestDTO.newUser("Novo Usuário", "novo@teste.com");
+        userRequest.setPassword("senha123");
         
         response = given()
                 .contentType("application/json")
-                .body(requestBody)
+                .body(userRequest.toJson())
                 .when()
                 .post("/auth/register"); // Usando o caminho que corresponde ao arquivo feature
+                
+        System.out.println("Registro com: " + userRequest.toJson());
     }
 
     @Então("o status da resposta deve ser {int}")
