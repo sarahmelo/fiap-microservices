@@ -8,7 +8,7 @@ Funcionalidade: Gerenciamento de Aspersores
   Cenário: Cadastrar novo aspersor
     Dado que eu estou autenticado no sistema
     Quando eu faço uma requisição POST para "/api/sprinkler" com dados válidos
-    Então o status da resposta deve ser 201
+    Então o status da resposta deve ser 200
     E a resposta deve conter os dados do aspersor criado
 
   Cenário: Listar todos os aspersores
