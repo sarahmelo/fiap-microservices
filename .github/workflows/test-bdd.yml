@@ -13,6 +13,8 @@ jobs:
     name: Executar Testes BDD
     runs-on: ubuntu-latest
     # Configuração para interromper o workflow se um passo falhar
+    outputs:
+      status: ${{ job.status }} # Exporta o status do job para uso posterior
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
@@ -26,18 +28,44 @@ jobs:
 
       # Executar todos os testes BDD no microsserviço Users com falha rápida
       - name: Executar testes BDD - Users
+        id: users-tests
         working-directory: ./users
         run: |
           echo "Executando testes BDD no módulo Users..."
-          ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast -Dcucumber.features=src/test/resources/features -Dcucumber.glue=br.com.fiap.users.bdd.steps,br.com.fiap.users.bdd.config
-        # O comando acima irá falhar imediatamente se encontrar qualquer erro de teste
+          # Forçar o Maven a falhar com código não zero se algum teste falhar
+          set -e  # Faz o script falhar se qualquer comando falhar
+          ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest \
+            -Dmaven.test.failure.ignore=false \
+            -Dfail-fast \
+            -Dcucumber.features=src/test/resources/features \
+            -Dcucumber.glue=br.com.fiap.users.bdd.steps,br.com.fiap.users.bdd.config
+          
+          # Verificar explicitamente se o Maven falhou e sair com erro
+          if [ $? -ne 0 ]; then
+            echo "FALHA: Os testes do módulo Users falharam!"
+            exit 1
+          fi
 
       # Executar todos os testes BDD no microsserviço Sprinkler apenas se o Users passar
       - name: Executar testes BDD - Sprinkler
+        id: sprinkler-tests
         working-directory: ./sprinkler
+        if: success() # Executar apenas se o passo anterior foi bem-sucedido
         run: |
           echo "Executando testes BDD no módulo Sprinkler..."
-          ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest -Dmaven.test.failure.ignore=false -Dfail-fast -Dcucumber.features=src/test/resources/features -Dcucumber.glue=br.com.fiap.aspersor.bdd.steps,br.com.fiap.aspersor.bdd
+          # Forçar o Maven a falhar com código não zero se algum teste falhar
+          set -e  # Faz o script falhar se qualquer comando falhar
+          ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest \
+            -Dmaven.test.failure.ignore=false \
+            -Dfail-fast \
+            -Dcucumber.features=src/test/resources/features \
+            -Dcucumber.glue=br.com.fiap.aspersor.bdd.steps,br.com.fiap.aspersor.bdd
+            
+          # Verificar explicitamente se o Maven falhou e sair com erro
+          if [ $? -ne 0 ]; then
+            echo "FALHA: Os testes do módulo Sprinkler falharam!"
+            exit 1
+          fi
 
       # Publicar relatórios como artefatos (apenas se chegar nesta etapa)
       - name: Publicar relatórios
@@ -56,12 +84,14 @@ jobs:
         run: |
           echo "‼️ TESTES FALHARAM! A pipeline foi interrompida. ‼️"
           echo "Verifique os logs para identificar os problemas."
+          # Forçar falha para garantir que o job termine com erro
           exit 1
   
   # Job de deploy que só será executado se todos os testes passarem
   deploy:
     name: Deploy das Aplicações
     needs: testes # Esta dependência garante que o deploy só começará se os testes passarem
+    if: needs.testes.result == 'success' # Verificação adicional para garantir que o deploy só ocorra se os testes passarem
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do código
