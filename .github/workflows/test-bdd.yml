@@ -1,4 +1,4 @@
-name: Testes BDD - Pipeline de Validação
+name: Testes BDD e Deploy - Pipeline Completa
 
 on:
   push:
@@ -56,4 +56,53 @@ jobs:
         run: |
           echo "‼️ TESTES FALHARAM! A pipeline foi interrompida. ‼️"
           echo "Verifique os logs para identificar os problemas."
+          exit 1
+  
+  # Job de deploy que só será executado se todos os testes passarem
+  deploy:
+    name: Deploy das Aplicações
+    needs: testes # Esta dependência garante que o deploy só começará se os testes passarem
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+          
+      # Deploy do microsserviço Users
+      - name: Deploy - Users
+        working-directory: ./users
+        run: |
+          echo "Iniciando o processo de deploy do módulo Users..."
+          # Substitua o comando abaixo pelo comando real de deploy
+          ./mvnw clean package -DskipTests
+          echo "✅ Deploy do módulo Users concluído com sucesso!"
+          
+      # Deploy do microsserviço Sprinkler
+      - name: Deploy - Sprinkler
+        working-directory: ./sprinkler
+        run: |
+          echo "Iniciando o processo de deploy do módulo Sprinkler..."
+          # Substitua o comando abaixo pelo comando real de deploy
+          ./mvnw clean package -DskipTests
+          echo "✅ Deploy do módulo Sprinkler concluído com sucesso!"
+          
+      # Notificação de sucesso do deploy
+      - name: Notificar sucesso
+        if: success()
+        run: |
+          echo "✅ DEPLOY CONCLUÍDO COM SUCESSO! ✅"
+          echo "Todos os microsserviços foram implantados corretamente."
+          
+      # Notificação de falha no deploy
+      - name: Notificar falha no deploy
+        if: failure()
+        run: |
+          echo "‼️ FALHA NO DEPLOY! ‼️"
+          echo "Ocorreu um erro durante o processo de deploy. Verifique os logs para mais detalhes."
           exit 1

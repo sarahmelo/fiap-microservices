@@ -99,6 +99,65 @@ docker run -p 8080:8080 sarahmelo/fiap-users:prod
 - **Listar Aspersores**: `GET /api/sprinklers`
 - **Obter Aspersor por ID**: `GET /api/sprinklers/{id}`
 - **Ativar Aspersor**: `POST /api/sprinklers/{id}/activate`
+
+## Executando os Testes BDD
+
+O projeto implementa testes automatizados utilizando o framework BDD (Behavior-Driven Development) com Cucumber e JUnit. Estes testes validam o comportamento dos microserviços através de cenários escritos em linguagem natural (Gherkin).
+
+### Pré-requisitos para execução dos testes
+
+- JDK 21 instalado e configurado
+- Maven configurado corretamente
+- Acesso ao repositório de código completo
+
+### Executando os testes do microserviço Users
+
+```bash
+# Navegar até o diretório do microserviço Users
+cd users
+
+# Executar os testes BDD com relatórios detalhados
+mvn test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest
+
+# Para executar apenas cenários específicos usando tags
+mvn test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest -Dcucumber.filter.tags="@autenticacao"
+```
+
+### Executando os testes do microserviço Sprinkler
+
+```bash
+# Navegar até o diretório do microserviço Sprinkler
+cd sprinkler
+
+# Executar os testes BDD
+mvn test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest
+
+# Para executar apenas cenários específicos usando tags
+mvn test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest -Dcucumber.filter.tags="@sprinkler"
+```
+
+### Opções adicionais para execução de testes
+
+| Opção | Descrição |
+| ------ | ------ |
+| `-Dcucumber.features=caminho/para/feature` | Especifica o caminho para arquivos .feature específicos |
+| `-Dcucumber.filter.tags="@tag"` | Executa apenas os cenários com a tag especificada |
+| `-Dcucumber.glue=pacote.glue` | Define o pacote onde estão os step definitions |
+| `-Dmaven.test.failure.ignore=false` | Interrompe a execução em caso de falha de teste |
+| `-Dfail-fast` | Interrompe a execução ao primeiro cenário que falhar |
+
+### Verificando os resultados dos testes
+
+Após a execução dos testes, os relatórios podem ser encontrados nos seguintes diretórios:
+
+```
+./users/target/cucumber-reports/     # Relatórios do microserviço Users
+./sprinkler/target/cucumber-reports/ # Relatórios do microserviço Sprinkler
+```
+
+### Integração com CI/CD
+
+Os testes BDD estão integrados ao pipeline de CI/CD do projeto. Quando um push é realizado ou um pull request é aberto, os testes são executados automaticamente, e o deploy só prosseguirá se todos os testes passarem com sucesso.
 - **Desativar Aspersor**: `POST /api/sprinklers/{id}/deactivate`
 
 ### Testando via Swagger UI
