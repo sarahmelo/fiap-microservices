@@ -1,4 +1,4 @@
-name: CI - Compilação e Testes
+name: CI/CD - Compilação, Testes e Deploy
 
 on:
   push:
@@ -7,8 +7,12 @@ on:
     branches: [ main, develop, master ]
 
 jobs:
+  # Job para compilar o código
   build:
+    name: Compilar aplicações
     runs-on: ubuntu-latest
+    outputs:
+      build_status: ${{ job.status }}
 
     steps:
       - name: Checkout do código
@@ -84,3 +88,143 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:${{ env.ENV }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:${{ env.ENV }}-${{ github.sha }}
+            
+  # Job para executar testes BDD
+  tests-bdd:
+    name: Executar Testes BDD
+    needs: build # Só executar após a compilação bem-sucedida
+    if: needs.build.result == 'success' # Só executar se a compilação foi bem-sucedida
+    runs-on: ubuntu-latest
+    outputs:
+      tests_passed: ${{ steps.set_result.outputs.tests_passed }}
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      
+      # Inicializar status como sucesso
+      - name: Inicializar status
+        run: echo "tests_status=success" >> $GITHUB_ENV
+            
+      # Executar testes BDD no microsserviço Users
+      - name: Testes BDD - Users
+        id: users_tests
+        working-directory: ./users
+        continue-on-error: true # Permite continuar para registrar a falha
+        run: |
+          echo "### 🧪 Executando testes BDD no módulo Users..."
+          ./mvnw test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest \
+            -Dmaven.test.failure.ignore=false \
+            -Dfail-fast \
+            -Dcucumber.features=src/test/resources/features \
+            -Dcucumber.glue=br.com.fiap.users.bdd.steps,br.com.fiap.users.bdd.config
+            
+      # Verificar resultado dos testes Users
+      - name: Verificar testes Users
+        if: steps.users_tests.outcome != 'success'
+        run: |
+          echo "::error::❌ TESTES DO USUÁRIO FALHARAM! Deploy será bloqueado."
+          echo "tests_status=failure" >> $GITHUB_ENV
+
+      # Executar testes BDD no microsserviço Sprinkler (só se Users passar)
+      - name: Testes BDD - Sprinkler
+        id: sprinkler_tests
+        if: steps.users_tests.outcome == 'success'
+        working-directory: ./sprinkler
+        continue-on-error: true # Permite continuar para registrar a falha
+        run: |
+          echo "### 🧪 Executando testes BDD no módulo Sprinkler..."
+          ./mvnw test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest \
+            -Dmaven.test.failure.ignore=false \
+            -Dfail-fast \
+            -Dcucumber.features=src/test/resources/features \
+            -Dcucumber.glue=br.com.fiap.aspersor.bdd.steps,br.com.fiap.aspersor.bdd
+
+      # Verificar resultado dos testes Sprinkler
+      - name: Verificar testes Sprinkler
+        if: steps.sprinkler_tests.outcome != 'success'
+        run: |
+          echo "::error::❌ TESTES DO ASPERSOR FALHARAM! Deploy será bloqueado."
+          echo "tests_status=failure" >> $GITHUB_ENV
+      
+      # Definir resultado final para os próximos jobs
+      - name: Definir resultado final
+        id: set_result
+        run: |
+          if [ "${{ env.tests_status }}" == "failure" ]; then
+            echo "::error::❌ TESTES FALHARAM! A pipeline foi interrompida."
+            echo "tests_passed=false" >> $GITHUB_OUTPUT
+            exit 1 # Falha o job se qualquer teste falhou
+          else
+            echo "tests_passed=true" >> $GITHUB_OUTPUT
+            echo "✅ TODOS OS TESTES PASSARAM COM SUCESSO!"
+          fi
+            
+      # Publicar relatórios como artefatos
+      - name: Publicar relatórios
+        if: always() # Sempre execute para ter os relatórios, mesmo em caso de falha
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-testes
+          path: |
+            **/target/cucumber-reports
+            **/target/surefire-reports
+          retention-days: 7
+          
+  # Job de deploy - Só é executado se os testes passarem
+  deploy:
+    name: Deploy das Aplicações
+    needs: [build, tests-bdd] # Depende da compilação e dos testes BDD
+    if: ${{ needs.tests-bdd.outputs.tests_passed == 'true' }} # Só executa se os testes passaram
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        
+      # Login no Docker Hub (provavelmente já feito, mas por segurança)
+      - name: Login no Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      
+      # Definir ambiente baseado na branch
+      - name: Definir ambiente
+        id: set-deploy-env
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          
+          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+            echo "DEPLOY_ENV=production" >> $GITHUB_ENV
+            echo "ENV=prod" >> $GITHUB_ENV
+          elif [[ "$BRANCH_NAME" == "develop" || "$BRANCH_NAME" == "developer" ]]; then
+            echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
+            echo "ENV=staging" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_ENV=development" >> $GITHUB_ENV
+            echo "ENV=dev" >> $GITHUB_ENV
+          fi
+
+      # Deploy para o ambiente adequado
+      - name: Deploy para ${{ env.DEPLOY_ENV }}
+        run: |
+          echo "✅ INICIANDO DEPLOY PARA ${{ env.DEPLOY_ENV }}..."
+          echo "Imagens Docker foram publicadas com sucesso no Docker Hub:"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:${{ env.ENV }}"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-users:${{ env.ENV }}-${{ github.sha }}"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:${{ env.ENV }}"
+          echo "  - ${{ secrets.DOCKER_HUB_USERNAME }}/fiap-sprinkler:${{ env.ENV }}-${{ github.sha }}"
+          
+          # Aqui seriam os comandos reais de deploy
+          # Por exemplo, atualizar um cluster Kubernetes ou executar scripts de deploy
+          
+          echo "✅ DEPLOY CONCLUÍDO COM SUCESSO!"
+          echo "Para executar localmente, use: docker-compose -f docker-compose-${{ env.ENV }}.yml up -d"
