@@ -175,7 +175,6 @@
 					<!-- Força o uso do JUnit 4 para o Cucumber -->
 					<useModulePath>false</useModulePath>
 					<useFile>false</useFile>
-					<testFailureIgnore>true</testFailureIgnore>
 				</configuration>
 				<dependencies>
 					<dependency>
