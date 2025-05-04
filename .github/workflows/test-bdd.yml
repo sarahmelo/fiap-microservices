@@ -5,71 +5,45 @@ on:
     branches: [ '*' ]
   pull_request:
     branches: [ main, develop, master ]
-  # Possibilidade de execução manual
   workflow_dispatch:
 
 jobs:
   testes:
-    name: Executar Testes BDD
     runs-on: ubuntu-latest
-    # Configuração para interromper o workflow se um passo falhar
-    outputs:
-      status: ${{ job.status }} # Exporta o status do job para uso posterior
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
 
-      - name: Configurar JDK 21
-        uses: actions/setup-java@v3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      # Executar todos os testes BDD no microsserviço Users com falha rápida
-      - name: Executar testes BDD - Users
+      # --- Testes Users ------------------------------------------------------
+      - name: Executar testes BDD – Users
         id: users-tests
         working-directory: ./users
         run: |
-          echo "Executando testes BDD no módulo Users..."
-          # Forçar o Maven a falhar com código não zero se algum teste falhar
-          set -e  # Faz o script falhar se qualquer comando falhar
-          ./mvnw clean test -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest \
-            -Dmaven.test.failure.ignore=false \
-            -Dfail-fast \
+          ./mvnw -B clean test \
+            -Dtest=br.com.fiap.users.bdd.CucumberRunnerTest \
             -Dcucumber.features=src/test/resources/features \
             -Dcucumber.glue=br.com.fiap.users.bdd.steps,br.com.fiap.users.bdd.config
-          
-          # Verificar explicitamente se o Maven falhou e sair com erro
-          if [ $? -ne 0 ]; then
-            echo "FALHA: Os testes do módulo Users falharam!"
-            exit 1
-          fi
+          # Se der erro, o próprio exit‑code do Maven aborta o job
 
-      # Executar todos os testes BDD no microsserviço Sprinkler apenas se o Users passar
-      - name: Executar testes BDD - Sprinkler
-        id: sprinkler-tests
+      # --- Testes Sprinkler (só se Users passou) -----------------------------
+      - name: Executar testes BDD – Sprinkler
+        if: steps.users-tests.outcome == 'success'
         working-directory: ./sprinkler
-        if: success() # Executar apenas se o passo anterior foi bem-sucedido
         run: |
-          echo "Executando testes BDD no módulo Sprinkler..."
-          # Forçar o Maven a falhar com código não zero se algum teste falhar
-          set -e  # Faz o script falhar se qualquer comando falhar
-          ./mvnw clean test -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest \
-            -Dmaven.test.failure.ignore=false \
-            -Dfail-fast \
+          ./mvnw -B clean test \
+            -Dtest=br.com.fiap.aspersor.bdd.CucumberRunnerTest \
             -Dcucumber.features=src/test/resources/features \
             -Dcucumber.glue=br.com.fiap.aspersor.bdd.steps,br.com.fiap.aspersor.bdd
-            
-          # Verificar explicitamente se o Maven falhou e sair com erro
-          if [ $? -ne 0 ]; then
-            echo "FALHA: Os testes do módulo Sprinkler falharam!"
-            exit 1
-          fi
 
-      # Publicar relatórios como artefatos (apenas se chegar nesta etapa)
+      # --- Relatórios (sempre, para ter logs) -------------------------------
       - name: Publicar relatórios
-        if: success() # Esta etapa só será executada se TODAS as anteriores forem bem-sucedidas
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: relatorios-testes
@@ -77,62 +51,26 @@ jobs:
             **/target/cucumber-reports
             **/target/surefire-reports
           retention-days: 7
-          
-      # Notificação de falha caso os testes não passem
-      - name: Notificar falha
-        if: failure()
-        run: |
-          echo "‼️ TESTES FALHARAM! A pipeline foi interrompida. ‼️"
-          echo "Verifique os logs para identificar os problemas."
-          # Forçar falha para garantir que o job termine com erro
-          exit 1
-  
-  # Job de deploy que só será executado se todos os testes passarem
+
+  # --------------------------------------------------------------------------
   deploy:
-    name: Deploy das Aplicações
-    needs: testes # Esta dependência garante que o deploy só começará se os testes passarem
-    if: needs.testes.result == 'success' # Verificação adicional para garantir que o deploy só ocorra se os testes passarem
+    needs: testes
+    if: needs.testes.result == 'success'      # só se todos os testes passaram
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-        
-      - name: Configurar JDK 21
-        uses: actions/setup-java@v3
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-          
-      # Deploy do microsserviço Users
-      - name: Deploy - Users
+
+      - name: Deploy – Users
         working-directory: ./users
-        run: |
-          echo "Iniciando o processo de deploy do módulo Users..."
-          # Substitua o comando abaixo pelo comando real de deploy
-          ./mvnw clean package -DskipTests
-          echo "✅ Deploy do módulo Users concluído com sucesso!"
-          
-      # Deploy do microsserviço Sprinkler
-      - name: Deploy - Sprinkler
+        run: ./mvnw -B clean package -DskipTests
+
+      - name: Deploy – Sprinkler
         working-directory: ./sprinkler
-        run: |
-          echo "Iniciando o processo de deploy do módulo Sprinkler..."
-          # Substitua o comando abaixo pelo comando real de deploy
-          ./mvnw clean package -DskipTests
-          echo "✅ Deploy do módulo Sprinkler concluído com sucesso!"
-          
-      # Notificação de sucesso do deploy
-      - name: Notificar sucesso
-        if: success()
-        run: |
-          echo "✅ DEPLOY CONCLUÍDO COM SUCESSO! ✅"
-          echo "Todos os microsserviços foram implantados corretamente."
-          
-      # Notificação de falha no deploy
-      - name: Notificar falha no deploy
-        if: failure()
-        run: |
-          echo "‼️ FALHA NO DEPLOY! ‼️"
-          echo "Ocorreu um erro durante o processo de deploy. Verifique os logs para mais detalhes."
-          exit 1
+        run: ./mvnw -B clean package -DskipTests
