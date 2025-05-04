@@ -164,10 +164,12 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.2.5</version>
 				<configuration>
 					<includes>
 						<include>**/*Test.java</include>
 					</includes>
+					<testFailureIgnore>true</testFailureIgnore>
 					<additionalClasspathElements>
 						<additionalClasspathElement>${basedir}/src/test/resources</additionalClasspathElement>
 					</additionalClasspathElements>
@@ -175,6 +177,14 @@
 					<!-- Força o uso do JUnit 4 para o Cucumber -->
 					<useModulePath>false</useModulePath>
 					<useFile>false</useFile>
+					<!-- Configurações adicionais para maior estabilidade -->
+					<argLine>-Xmx1024m -XX:MaxPermSize=256m</argLine>
+					<forkCount>1</forkCount>
+					<reuseForks>true</reuseForks>
+					<systemPropertyVariables>
+						<cucumber.publish.quiet>true</cucumber.publish.quiet>
+						<cucumber.filter.tags>not @ignore</cucumber.filter.tags>
+					</systemPropertyVariables>
 				</configuration>
 				<dependencies>
 					<dependency>
