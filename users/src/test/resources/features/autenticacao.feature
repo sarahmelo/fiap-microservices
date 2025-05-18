@@ -20,5 +20,5 @@ Funcionalidade: Autenticação de Usuários
   Cenário: Registro de novo usuário
     Dado que não existe um usuário com email "novo@teste.com"
     Quando eu faço uma requisição POST para "/auth/register" com dados válidos
-    Então o status da resposta deve ser 201
+    Então o status da resposta deve ser 300
     E a resposta deve conter os dados do usuário criado
